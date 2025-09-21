@@ -21,10 +21,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let reportItems = [];
     let clients = [];
-    // =================================================================
-    // >>>>>>>>>> ГЛАВНОЕ ИЗМЕНЕНИЕ ЗДЕСЬ <<<<<<<<<<<
-    // Используем относительный путь к логотипу, который лежит в репозитории
-    // =================================================================
     const logoUrl = 'bay-services-logo.png';
 
     // --- Local Storage Functions ---
@@ -137,13 +133,15 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) {
             console.error("Could not process logo:", error);
             alert("Error: Could not load the logo for the PDF. Please check your internet connection.");
-            return; // Stop execution if logo fails
+            return;
         }
 
         let reportCounter = (parseInt(localStorage.getItem('reportCounter') || '1000')) + 1;
         localStorage.setItem('reportCounter', reportCounter.toString());
+        const reportNumString = `R-${reportCounter}`;
+
         const reportNumElement = elementClone.querySelector('#reportNumPlaceholder');
-        if (reportNumElement) reportNumElement.textContent = `R-${reportCounter}`;
+        if (reportNumElement) reportNumElement.textContent = reportNumString;
         
         elementClone.querySelectorAll('.editable-field').forEach(field => {
             const textNode = document.createElement('div');
@@ -152,8 +150,13 @@ document.addEventListener('DOMContentLoaded', () => {
             if (field.classList.contains('align-right')) textNode.style.textAlign = 'right';
             field.parentNode.replaceChild(textNode, field);
         });
-
-        const fileName = `Service-Report_${clientNameInput.value.trim().replace(/\s+/g, '_')}_${serviceDateInput.value}.pdf`;
+        
+        // =================================================================
+        // >>>>>>>>>> ИЗМЕНЕНИЕ ЗДЕСЬ <<<<<<<<<<<
+        // Новое имя файла на основе номера отчета
+        // =================================================================
+        const fileName = `Service Report - ${reportNumString}.pdf`;
+        
         const options = { margin: 0, filename: fileName, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } };
         
         html2pdf().from(elementClone).set(options).save();
