@@ -118,6 +118,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     exportPdfBtn.addEventListener('click', async () => {
         const element = document.getElementById('report-container');
+        
+        // =================================================================
+        // >>>>>>>>>> ГЛАВНОЕ ИЗМЕНЕНИЕ ЗДЕСЬ <<<<<<<<<<<
+        // Получаем актуальный адрес из поля предпросмотра ПЕРЕД клонированием
+        // =================================================================
+        const previewClientInfoText = document.getElementById('previewClientInfo').value;
+        const textLines = previewClientInfoText.split('\n');
+        // Вторая строка (индекс 1) - это адрес
+        const addressLine = textLines.length > 1 ? textLines[1].trim() : ''; 
+        const houseNumber = addressLine ? addressLine.split(' ')[0] : '';
+
         const elementClone = element.cloneNode(true);
         const logoInClone = elementClone.querySelector('#reportLogo');
 
@@ -151,13 +162,6 @@ document.addEventListener('DOMContentLoaded', () => {
             field.parentNode.replaceChild(textNode, field);
         });
         
-        // =================================================================
-        // >>>>>>>>>> ИЗМЕНЕНИЕ ЗДЕСЬ <<<<<<<<<<<
-        // Добавляем номер дома в имя файла
-        // =================================================================
-        const fullAddress = clientAddressInput.value.trim();
-        const houseNumber = fullAddress ? fullAddress.split(' ')[0] : '';
-
         let fileName = `Service Report - ${reportNumString}`;
         if (houseNumber) {
             fileName += ` - ${houseNumber}`;
@@ -224,7 +228,7 @@ document.addEventListener('DOMContentLoaded', () => {
             </main>
             <footer>
                 <p>3700 Lick Mill Blvd, Apt. 311, Santa Clara, CA, 95054</p>
-                <p>Phone: (650) 666-3911 | Email: info@thebayservices.com | Web: www.thebayservices.com</p>
+                <p>Phone: (650) 731-7359 | Email: info@thebayservices.com | Web: www.thebayservices.com</p>
             </footer>`;
     }
 
