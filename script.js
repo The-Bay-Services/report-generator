@@ -153,9 +153,16 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // =================================================================
         // >>>>>>>>>> ИЗМЕНЕНИЕ ЗДЕСЬ <<<<<<<<<<<
-        // Новое имя файла на основе номера отчета
+        // Добавляем номер дома в имя файла
         // =================================================================
-        const fileName = `Service Report - ${reportNumString}.pdf`;
+        const fullAddress = clientAddressInput.value.trim();
+        const houseNumber = fullAddress ? fullAddress.split(' ')[0] : '';
+
+        let fileName = `Service Report - ${reportNumString}`;
+        if (houseNumber) {
+            fileName += ` - ${houseNumber}`;
+        }
+        fileName += '.pdf';
         
         const options = { margin: 0, filename: fileName, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } };
         
