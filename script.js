@@ -18,6 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const addItemBtn = document.getElementById('addItemBtn');
     const itemsPreviewTableBody = document.querySelector('#items-preview-table tbody');
     const clientNamesList = document.getElementById('clientNamesList');
+    const houseNumberInput = document.getElementById('houseNumberForFilename'); // Ссылка на скрытое поле
 
     let reportItems = [];
     let clients = [];
@@ -62,7 +63,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (client) {
             clientAddressInput.value = client.address;
             clientUnitInput.value = client.unit;
+            updateHouseNumberForFilename(client.address);
         }
+    });
+    
+    clientAddressInput.addEventListener('input', () => {
+        updateHouseNumberForFilename(clientAddressInput.value);
     });
 
     addReportBtn.addEventListener('click', () => {
@@ -91,19 +97,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const description = itemDescriptionInput.value.trim();
         let price = parseFloat(itemPriceInput.value);
         const isRecommendation = service === 'Recommendation';
-
         if (isRecommendation && isNaN(price)) {
             price = 0;
         }
-
         if (service && (isRecommendation || (!isNaN(price) && price >= 0))) {
             reportItems.push({ service, description, price });
             renderItemsPreview();
-            itemServiceSelect.value = '';
-            itemCustomServiceInput.value = '';
-            customServiceGroup.classList.add('hidden');
-            itemDescriptionInput.value = '';
-            itemPriceInput.value = '';
+            itemServiceSelect.value = ''; itemCustomServiceInput.value = '';
+            customServiceGroup.classList.add('hidden'); itemDescriptionInput.value = ''; itemPriceInput.value = '';
         } else {
             alert('Please select a service and enter a valid price.');
         }
@@ -123,6 +124,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         updateClientData({ name: clientNameInput.value.trim(), address: clientAddressInput.value.trim(), unit: clientUnitInput.value.trim() });
+        updateHouseNumberForFilename(clientAddressInput.value); // Изначально записываем номер дома
         generateReportPreview();
         reportModal.classList.add('hidden');
         reportContainer.classList.remove('hidden');
@@ -131,25 +133,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     exportPdfBtn.addEventListener('click', async () => {
         const element = document.getElementById('report-container');
-        const previewClientInfoText = document.getElementById('previewClientInfo').value;
-        const textLines = previewClientInfoText.split('\n');
-        const addressLine = textLines.length > 1 ? textLines[1].trim() : '';
-        const houseNumber = addressLine ? addressLine.split(' ')[0] : '';
-        
         const elementClone = element.cloneNode(true);
         const logoInClone = elementClone.querySelector('#reportLogo');
 
-        // Replace editable fields before logo processing
-        elementClone.querySelectorAll('.editable-field').forEach(field => {
-            const textNode = document.createElement('div');
-            textNode.style.whiteSpace = 'pre-wrap';
-            textNode.textContent = field.value || field.textContent;
-             if (field.classList.contains('align-right')) {
-                 textNode.style.textAlign = 'right';
-            }
-            field.parentNode.replaceChild(textNode, field);
-        });
-        
         try {
             const response = await fetch(logoUrl);
             const blob = await response.blob();
@@ -172,6 +158,21 @@ document.addEventListener('DOMContentLoaded', () => {
         const reportNumElement = elementClone.querySelector('#reportNumPlaceholder');
         if (reportNumElement) reportNumElement.textContent = reportNumString;
         
+        elementClone.querySelectorAll('.editable-field').forEach(field => {
+            const textNode = document.createElement('div');
+            textNode.style.whiteSpace = 'pre-wrap';
+            textNode.textContent = field.value || field.textContent;
+             if (field.classList.contains('align-right')) {
+                 textNode.style.textAlign = 'right';
+            }
+            field.parentNode.replaceChild(textNode, field);
+        });
+        
+        // =================================================================
+        // >>>>>>>>>> ИСПРАВЛЕНИЕ ЗДЕСЬ <<<<<<<<<<<
+        // Берем номер дома из надежного скрытого поля, которое всегда содержит актуальные данные
+        // =================================================================
+        const houseNumber = houseNumberInput.value;
         let fileName = `Service Report - ${reportNumString}`;
         if (houseNumber) {
             fileName += ` - ${houseNumber}`;
@@ -184,6 +185,14 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // --- Functions ---
+    
+    // Новая функция для извлечения номера дома и обновления скрытого поля
+    function updateHouseNumberForFilename(fullAddress) {
+        const address = fullAddress || '';
+        const houseNumber = address.trim() ? address.trim().split(' ')[0] : '';
+        houseNumberInput.value = houseNumber;
+    }
+
     function renderItemsPreview() {
         itemsPreviewTableBody.innerHTML = '';
         reportItems.forEach((item, index) => {
@@ -237,6 +246,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 <p>3700 Lick Mill Blvd, Apt. 311, Santa Clara, CA, 95054</p>
                 <p>Phone: (650) 666-3911 | Email: info@thebayservices.com | Web: www.thebayservices.com</p>
             </footer>`;
+            
+        // =================================================================
+        // >>>>>>>>>> ИЗМЕНЕНИЕ ЗДЕСЬ <<<<<<<<<<<
+        // Добавляем слушатель, который обновляет скрытое поле при редактировании адреса в предпросмотре
+        // =================================================================
+        const previewTextarea = document.getElementById('previewClientInfo');
+        if (previewTextarea) {
+            previewTextarea.addEventListener('input', () => {
+                const textLines = previewTextarea.value.split('\n');
+                const addressLine = textLines.length > 1 ? textLines[1].trim() : '';
+                updateHouseNumberForFilename(addressLine);
+            });
+        }
     }
 
     function resetForm() {
@@ -244,6 +266,7 @@ document.addEventListener('DOMContentLoaded', () => {
         reportItems = [];
         renderItemsPreview();
         serviceDateInput.valueAsDate = new Date();
+        houseNumberInput.value = ''; // Сбрасываем скрытое поле
     }
 
     function escapeHTML(str) {
