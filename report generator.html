@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Service Report Generator</title>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- html2pdf.js library for PDF generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" integrity="sha512-GsLlZN/3F2ErC5ifS5QtgpiJtWd43JWSuIgh7mbzZ8zBps+dvLusV+eNQATqgA/HdeKFVgA5v3S/cIrLF7QnIg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <style>
+        :root {
+            --primary-color: #005A9C;
+            --secondary-color: #6c757d;
+            --success-color: #28a745;
+            --light-color: #f8f9fa;
+            --dark-color: #343a40;
+            --white-color: #ffffff;
+            --border-color: #dee2e6;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #f4f7f6;
+            color: var(--dark-color);
+            margin: 0;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            background: var(--white-color);
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            width: 100%;
+            max-width: 800px;
+            margin-bottom: 2rem;
+        }
+
+        h1 {
+            color: var(--primary-color);
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 200px;
+            padding: 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-family: 'Inter', monospace;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+            box-sizing: border-box;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        button {
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 6px;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s ease-in-out;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: var(--white-color);
+        }
+
+        .btn-primary:hover {
+            background-color: #004a80;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        
+        .btn-success {
+            background-color: var(--success-color);
+            color: var(--white-color);
+        }
+
+        .btn-success:hover {
+            background-color: #218838;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Report Preview Styles */
+        #report-container {
+            display: flex;
+            flex-direction: column;
+            width: 794px; /* A4 width at 96dpi */
+            min-height: 1123px; /* A4 height at 96dpi */
+            background: var(--white-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            padding: 2.5rem;
+            box-sizing: border-box;
+        }
+        
+        #report-container main {
+            flex-grow: 1;
+        }
+        
+        #report-container header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 1rem;
+            margin-bottom: 2rem;
+        }
+       
+        #report-container h2 {
+            text-align: center;
+            color: var(--dark-color);
+            margin: 1rem 0 2rem 0;
+        }
+        .report-meta {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 2.5rem;
+            font-size: 0.95rem;
+        }
+        .client-info-block, .report-details-block {
+            flex-basis: 48%;
+        }
+        .report-details-block {
+            text-align: right;
+        }
+        
+        #report-container table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1.5rem;
+        }
+        #report-container th, #report-container td {
+            border: 1px solid var(--border-color);
+            padding: 0.75rem 1rem;
+            text-align: left;
+            vertical-align: top;
+        }
+        #report-container th {
+            background-color: var(--light-color);
+            font-weight: 600;
+        }
+        #report-container .item-sub-description {
+            font-size: 0.9em;
+            color: #555;
+            white-space: pre-wrap;
+        }
+        #report-container .total-section {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 2rem;
+        }
+        #report-container .total-box {
+            width: 40%;
+            text-align: right;
+            padding: 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+        }
+        #report-container .total-box strong {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+
+        #report-container footer {
+            text-align: center;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border-color);
+            font-size: 0.85rem;
+            color: var(--secondary-color);
+            line-height: 1.5;
+        }
+
+        /* Styles for editable fields in preview */
+        .editable-field {
+            border: 1px solid transparent;
+            background-color: transparent;
+            padding: 2px;
+            margin: -2px; /* Offset padding */
+            width: 100%;
+            box-sizing: border-box;
+            font-family: inherit;
+            font-size: inherit;
+            line-height: 1.5;
+            color: inherit;
+            resize: none;
+            overflow: hidden;
+            border-radius: 3px;
+        }
+        .editable-field:hover, .editable-field:focus {
+            outline: none;
+            border: 1px dashed var(--secondary-color);
+            background-color: #f4f7f6;
+        }
+        
+        .report-details-block .editable-field {
+            text-align: right;
+            width: auto;
+            display: inline-block;
+            max-width: 150px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Service Report Generator</h1>
+        <textarea id="reportDataInput" placeholder="Paste your report data here in JSON format. See example below."></textarea>
+        <div class="controls">
+            <button id="generateReportBtn" class="btn-primary">Generate Report</button>
+            <button id="exportPdfBtn" class="btn-success hidden">Export to PDF</button>
+        </div>
+        <h3>Example JSON Format:</h3>
+        <pre><code>{
+  "clientName": "John Doe",
+  "clientAddress": "123 Main St\nAnytown, CA 90210",
+  "clientUnit": "Apt 101",
+  "serviceDate": "2025-09-21",
+  "reportItems": [
+    {
+      "service": "Dryer Vent Cleaning",
+      "description": "Dryer vent cleaning was performed from the roof during our visit to ensure full access to the exhaust outlet, improving both safety and overall airflow efficiency.",
+      "price": 99.00
+    },
+    {
+      "service": "Chimney Cleaning",
+      "description": "Complete chimney sweep and inspection to ensure safe operation and remove flammable creosote buildup.",
+      "price": 150.00
+    }
+  ]
+}</code></pre>
+    </div>
+
+    <!-- This container will be filled with the generated report -->
+    <div id="report-container" class="hidden"></div>
+
+    <script>
+        // DOM Elements
+        const reportDataInput = document.getElementById('reportDataInput');
+        const generateReportBtn = document.getElementById('generateReportBtn');
+        const exportPdfBtn = document.getElementById('exportPdfBtn');
+        const reportContainer = document.getElementById('report-container');
+
+        // --- Event Listeners ---
+        generateReportBtn.addEventListener('click', () => {
+            try {
+                const reportData = JSON.parse(reportDataInput.value);
+                generateReportPreview(reportData);
+                reportContainer.classList.remove('hidden');
+                exportPdfBtn.classList.remove('hidden');
+            } catch (error) {
+                alert('Invalid JSON format. Please check your input. Error: ' + error.message);
+                console.error('JSON parsing error:', error);
+            }
+        });
+
+        exportPdfBtn.addEventListener('click', () => {
+            const element = document.getElementById('report-container');
+            const elementClone = element.cloneNode(true);
+            
+            // Increment report counter and update placeholder
+            let reportCounter = parseInt(localStorage.getItem('reportCounter') || '1000');
+            reportCounter++;
+            localStorage.setItem('reportCounter', reportCounter);
+            const reportNumElement = elementClone.querySelector('#reportNumPlaceholder');
+            if(reportNumElement) {
+                reportNumElement.textContent = `R-${reportCounter}`;
+            }
+            
+            // Replace editable fields with their text content for PDF export
+            elementClone.querySelectorAll('.editable-field').forEach(field => {
+                const textNode = document.createElement('div');
+                textNode.innerText = field.value;
+                if(field.tagName === 'TEXTAREA') {
+                    textNode.style.whiteSpace = 'pre-wrap';
+                }
+                field.parentNode.replaceChild(textNode, field);
+            });
+            
+            // Get client name and date for filename
+            const clientNameForFilename = reportDataInput.value ? JSON.parse(reportDataInput.value).clientName.replace(/ /g, '_') : 'Report';
+            const serviceDateForFilename = reportDataInput.value ? JSON.parse(reportDataInput.value).serviceDate : new Date().toISOString().slice(0,10);
+            const fileName = `Service-Report_${clientNameForFilename}_${serviceDateForFilename}.pdf`;
+
+            const options = {
+                margin: 0,
+                filename: fileName,
+                image: { type: 'jpeg', quality: 1.0 },
+                html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+                jsPDF: { unit: 'px', format: 'a4', orientation: 'portrait' }
+            };
+
+            html2pdf().from(elementClone).set(options).save();
+        });
+
+
+        // --- Functions ---
+
+        function generateReportPreview(data) {
+            const clientName = data.clientName || 'N/A';
+            const clientAddress = data.clientAddress || 'N/A';
+            const clientUnit = data.clientUnit || '';
+            const serviceDate = data.serviceDate ? new Date(data.serviceDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : 'N/A';
+            const reportItems = data.reportItems || [];
+            
+            let fullAddress = escapeHTML(clientName) + '\n' + escapeHTML(clientAddress);
+            if(clientUnit) {
+                fullAddress += `\nUnit: ${escapeHTML(clientUnit)}`;
+            }
+
+            let itemsHtml = '';
+            let total = 0;
+            if (reportItems.length > 0) {
+                reportItems.forEach(item => {
+                    itemsHtml += `
+                        <tr>
+                            <td><strong>${escapeHTML(item.service || 'N/A')}</strong></td>
+                            <td class="item-sub-description">${escapeHTML(item.description || '')}</td>
+                            <td style="text-align: right;">$${(item.price || 0).toFixed(2)}</td>
+                        </tr>
+                    `;
+                    total += (item.price || 0);
+                });
+            } else {
+                itemsHtml = `
+                    <tr>
+                        <td><strong>No Services Provided</strong></td>
+                        <td></td>
+                        <td style="text-align: right;">$0.00</td>
+                    </tr>
+                `;
+            }
+            
+            const logoUrl = "https://thebayservices.com/wp-content/uploads/2022/07/bay-services-logo-300x100.png";
+
+            const reportHTML = `
+                <header>
+                    <img src="${logoUrl}" alt="Bay Services Logo" width="150" height="50">
+                </header>
+                <main>
+                    <h2>Service Report</h2>
+                    <div class="report-meta">
+                        <div class="client-info-block">
+                            <strong>Bill To:</strong>
+                            <div class="editable-container" style="margin-top: 8px;">
+                                 <textarea class="editable-field" id="previewClientInfo">${fullAddress}</textarea>
+                            </div>
+                        </div>
+                        <div class="report-details-block">
+                            <div class="editable-container">
+                                <strong>Service Date:</strong> <input type="text" class="editable-field" id="previewServiceDate" value="${serviceDate}"><br>
+                                <strong>Report #:</strong> <span id="reportNumPlaceholder"></span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Service</th>
+                                <th>Description</th>
+                                <th style="text-align: right;">Price</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${itemsHtml}
+                        </tbody>
+                    </table>
+                    <div class="total-section">
+                       <div class="total-box">
+                            <strong>Total: $${total.toFixed(2)}</strong>
+                        </div>
+                    </div>
+                </main>
+                <footer>
+                    <p>3700 Lick Mill Blvd, Apt. 311, Santa Clara, CA, 95054</p>
+                    <p>Phone: (650) 666-3911 | Email: info@thebayservices.com | Web: www.thebayservices.com</p>
+                </footer>
+            `;
+            reportContainer.innerHTML = reportHTML;
+        }
+
+        function escapeHTML(str) {
+            if (typeof str !== 'string') return '';
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        // Set a default example JSON in the textarea
+        reportDataInput.value = JSON.stringify({
+            "clientName": "John Doe",
+            "clientAddress": "123 Main St\nAnytown, CA 90210",
+            "clientUnit": "Apt 101",
+            "serviceDate": "2025-09-21",
+            "reportItems": [
+                {
+                    "service": "Dryer Vent Cleaning",
+                    "description": "Dryer vent cleaning was performed from the roof during our visit to ensure full access to the exhaust outlet, improving both safety and overall airflow efficiency.",
+                    "price": 99.00
+                },
+                {
+                    "service": "Chimney Cleaning",
+                    "description": "Complete chimney sweep and inspection to ensure safe operation and remove flammable creosote buildup.",
+                    "price": 150.00
+                }
+            ]
+        }, null, 2); // null, 2 for pretty printing
+    </script>
+</body>
+</html>

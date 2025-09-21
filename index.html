@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Service Report Generator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="main-controls">
+        <button id="addReportBtn" class="btn-primary">Add New Report</button>
+        <button id="exportPdfBtn" class="btn-success hidden">Export to PDF</button>
+    </div>
+
+    <div id="report-container" class="hidden"></div>
+
+    <div id="reportModal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h2>Create New Report</h2>
+            <form id="reportForm" novalidate>
+                <fieldset>
+                    <legend><h3>Client Information</h3></legend>
+                    <div class="form-group">
+                        <label for="clientName">Client Name</label>
+                        <input type="text" id="clientName" list="clientNamesList" required>
+                        <datalist id="clientNamesList"></datalist>
+                    </div>
+                    <div class="form-group">
+                        <label for="clientAddress">Client Address</label>
+                        <textarea id="clientAddress" rows="3" required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="clientUnit">Unit # (Apt, Suite, etc.)</label>
+                        <input type="text" id="clientUnit">
+                    </div>
+                    <div class="form-group">
+                        <label for="serviceDate">Service Date</label>
+                        <input type="date" id="serviceDate" required>
+                    </div>
+                </fieldset>
+                <fieldset>
+                    <legend><h3>Services / Items</h3></legend>
+                    <div id="item-form">
+                        <div class="form-group">
+                            <label for="itemService">Service</label>
+                            <select id="itemService">
+                                <option value="">-- Select a service --</option>
+                                <option value="Dryer Vent Cleaning">Dryer Vent Cleaning</option>
+                                <option value="Chimney Cleaning">Chimney Cleaning</option>
+                                <option value="Air Duct Cleaning">Air Duct Cleaning</option>
+                                <option value="Other">Other (Custom)</option>
+                            </select>
+                        </div>
+                        <div class="form-group hidden" id="customServiceGroup">
+                             <label for="itemCustomService">Custom Service Name</label>
+                             <input type="text" id="itemCustomService">
+                        </div>
+                        <div class="form-group">
+                            <label for="itemDescription">Additional Description</label>
+                            <textarea id="itemDescription" rows="3"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="itemPrice">Price ($)</label>
+                            <input type="number" id="itemPrice" min="0" step="0.01">
+                        </div>
+                        <button type="button" id="addItemBtn" class="btn-primary" style="width: 100%;">Add Item</button>
+                    </div>
+                    <table id="items-preview-table">
+                        <thead>
+                            <tr>
+                                <th>Service</th>
+                                <th>Description</th>
+                                <th>Price</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </fieldset>
+                <div class="modal-actions">
+                    <button type="button" id="cancelBtn" class="btn-secondary">Cancel</button>
+                    <button type="submit" class="btn-primary">Generate Report</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="script.js"></script>
+
+</body>
+</html>
