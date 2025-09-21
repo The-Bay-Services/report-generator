@@ -91,9 +91,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const description = itemDescriptionInput.value.trim();
         let price = parseFloat(itemPriceInput.value);
         const isRecommendation = service === 'Recommendation';
+
         if (isRecommendation && isNaN(price)) {
             price = 0;
         }
+
         if (service && (isRecommendation || (!isNaN(price) && price >= 0))) {
             reportItems.push({ service, description, price });
             renderItemsPreview();
@@ -129,34 +131,32 @@ document.addEventListener('DOMContentLoaded', () => {
 
     exportPdfBtn.addEventListener('click', async () => {
         const element = document.getElementById('report-container');
-        
-        // =================================================================
-        // >>>>>>>>>> ГЛАВНОЕ ИСПРАВЛЕНИЕ ЗДЕСЬ <<<<<<<<<<<
-        // Считываем актуальные данные из полей предпросмотра ПЕРЕД созданием PDF
-        // =================================================================
         const previewClientInfoText = document.getElementById('previewClientInfo').value;
         const textLines = previewClientInfoText.split('\n');
-        const addressLine = textLines.length > 1 ? textLines[1].trim() : ''; 
+        const addressLine = textLines.length > 1 ? textLines[1].trim() : '';
         const houseNumber = addressLine ? addressLine.split(' ')[0] : '';
-
+        
         const elementClone = element.cloneNode(true);
         const logoInClone = elementClone.querySelector('#reportLogo');
-        
-        // Меняем текстовое поле на обычный текст в клоне, чтобы в PDF был статичный текст
-        const previewTextareaClone = elementClone.querySelector('#previewClientInfo');
-        if(previewTextareaClone) {
-            const staticDiv = document.createElement('div');
-            staticDiv.style.whiteSpace = 'pre-wrap'; // Сохраняем переносы строк
-            staticDiv.textContent = previewTextareaClone.value;
-            previewTextareaClone.parentNode.replaceChild(staticDiv, previewTextareaClone);
-        }
 
+        // Replace editable fields before logo processing
+        elementClone.querySelectorAll('.editable-field').forEach(field => {
+            const textNode = document.createElement('div');
+            textNode.style.whiteSpace = 'pre-wrap';
+            textNode.textContent = field.value || field.textContent;
+             if (field.classList.contains('align-right')) {
+                 textNode.style.textAlign = 'right';
+            }
+            field.parentNode.replaceChild(textNode, field);
+        });
+        
         try {
             const response = await fetch(logoUrl);
             const blob = await response.blob();
-            const dataUrl = await new Promise(resolve => {
+            const dataUrl = await new Promise((resolve, reject) => {
                 const reader = new FileReader();
                 reader.onloadend = () => resolve(reader.result);
+                reader.onerror = reject;
                 reader.readAsDataURL(blob);
             });
             logoInClone.src = dataUrl;
@@ -169,19 +169,8 @@ document.addEventListener('DOMContentLoaded', () => {
         let reportCounter = (parseInt(localStorage.getItem('reportCounter') || '1000')) + 1;
         localStorage.setItem('reportCounter', reportCounter.toString());
         const reportNumString = `R-${reportCounter}`;
-
         const reportNumElement = elementClone.querySelector('#reportNumPlaceholder');
         if (reportNumElement) reportNumElement.textContent = reportNumString;
-        
-        // Убираем остальные редактируемые поля
-        elementClone.querySelectorAll('.editable-field').forEach(field => {
-            const textNode = document.createElement('div');
-            textNode.innerText = field.value || field.textContent;
-            if (field.classList.contains('align-right')) {
-                 textNode.style.textAlign = 'right';
-            }
-            field.parentNode.replaceChild(textNode, field);
-        });
         
         let fileName = `Service Report - ${reportNumString}`;
         if (houseNumber) {
@@ -189,7 +178,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         fileName += '.pdf';
         
-        const options = { margin: 0, filename: fileName, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } };
+        const options = { margin: 0, filename: fileName, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2, useCORS: true }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } };
         
         html2pdf().from(elementClone).set(options).save();
     });
