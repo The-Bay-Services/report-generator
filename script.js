@@ -78,13 +78,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
     itemServiceSelect.addEventListener('change', () => {
         customServiceGroup.classList.toggle('hidden', itemServiceSelect.value !== 'Other');
+        const dryerVentDefaultText = "A complete dryer cleaning has been performed, which included:\n- Lint trap cleaning\n- Cleaning of internal components\n\nThis cleaning significantly improves both safety and dryer performance.";
+        if (itemServiceSelect.value === 'Dryer Vent Cleaning') {
+            itemDescriptionInput.value = dryerVentDefaultText;
+        } else if (itemDescriptionInput.value === dryerVentDefaultText) {
+            itemDescriptionInput.value = '';
+        }
     });
 
     addItemBtn.addEventListener('click', () => {
         let service = itemServiceSelect.value === 'Other' ? itemCustomServiceInput.value.trim() : itemServiceSelect.value;
-        const price = parseFloat(itemPriceInput.value);
-        if (service && !isNaN(price) && price >= 0) {
-            reportItems.push({ service, description: itemDescriptionInput.value.trim(), price });
+        const description = itemDescriptionInput.value.trim();
+        let price = parseFloat(itemPriceInput.value);
+        const isRecommendation = service === 'Recommendation';
+        if (isRecommendation && isNaN(price)) {
+            price = 0;
+        }
+        if (service && (isRecommendation || (!isNaN(price) && price >= 0))) {
+            reportItems.push({ service, description, price });
             renderItemsPreview();
             itemServiceSelect.value = '';
             itemCustomServiceInput.value = '';
@@ -120,17 +131,25 @@ document.addEventListener('DOMContentLoaded', () => {
         const element = document.getElementById('report-container');
         
         // =================================================================
-        // >>>>>>>>>> ГЛАВНОЕ ИЗМЕНЕНИЕ ЗДЕСЬ <<<<<<<<<<<
-        // Получаем актуальный адрес из поля предпросмотра ПЕРЕД клонированием
+        // >>>>>>>>>> ГЛАВНОЕ ИСПРАВЛЕНИЕ ЗДЕСЬ <<<<<<<<<<<
+        // Считываем актуальные данные из полей предпросмотра ПЕРЕД созданием PDF
         // =================================================================
         const previewClientInfoText = document.getElementById('previewClientInfo').value;
         const textLines = previewClientInfoText.split('\n');
-        // Вторая строка (индекс 1) - это адрес
         const addressLine = textLines.length > 1 ? textLines[1].trim() : ''; 
         const houseNumber = addressLine ? addressLine.split(' ')[0] : '';
 
         const elementClone = element.cloneNode(true);
         const logoInClone = elementClone.querySelector('#reportLogo');
+        
+        // Меняем текстовое поле на обычный текст в клоне, чтобы в PDF был статичный текст
+        const previewTextareaClone = elementClone.querySelector('#previewClientInfo');
+        if(previewTextareaClone) {
+            const staticDiv = document.createElement('div');
+            staticDiv.style.whiteSpace = 'pre-wrap'; // Сохраняем переносы строк
+            staticDiv.textContent = previewTextareaClone.value;
+            previewTextareaClone.parentNode.replaceChild(staticDiv, previewTextareaClone);
+        }
 
         try {
             const response = await fetch(logoUrl);
@@ -154,11 +173,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const reportNumElement = elementClone.querySelector('#reportNumPlaceholder');
         if (reportNumElement) reportNumElement.textContent = reportNumString;
         
+        // Убираем остальные редактируемые поля
         elementClone.querySelectorAll('.editable-field').forEach(field => {
             const textNode = document.createElement('div');
             textNode.innerText = field.value || field.textContent;
-            if (field.tagName === 'TEXTAREA') textNode.style.whiteSpace = 'pre-wrap';
-            if (field.classList.contains('align-right')) textNode.style.textAlign = 'right';
+            if (field.classList.contains('align-right')) {
+                 textNode.style.textAlign = 'right';
+            }
             field.parentNode.replaceChild(textNode, field);
         });
         
@@ -178,7 +199,8 @@ document.addEventListener('DOMContentLoaded', () => {
         itemsPreviewTableBody.innerHTML = '';
         reportItems.forEach((item, index) => {
             const row = document.createElement('tr');
-            row.innerHTML = `<td>${escapeHTML(item.service)}</td><td>${escapeHTML(item.description)}</td><td>$${item.price.toFixed(2)}</td><td><button type="button" class="btn-danger delete-item-btn" data-index="${index}">X</button></td>`;
+            const priceCell = item.service === 'Recommendation' && item.price === 0 ? '-' : `$${item.price.toFixed(2)}`;
+            row.innerHTML = `<td>${escapeHTML(item.service)}</td><td>${escapeHTML(item.description)}</td><td>${priceCell}</td><td><button type="button" class="btn-danger delete-item-btn" data-index="${index}">X</button></td>`;
             itemsPreviewTableBody.appendChild(row);
         });
     }
@@ -193,13 +215,11 @@ document.addEventListener('DOMContentLoaded', () => {
             <tr>
                 <td><strong>${escapeHTML(item.service)}</strong></td>
                 <td class="item-sub-description">${escapeHTML(item.description)}</td>
-                <td style="text-align: right;">$${item.price.toFixed(2)}</td>
+                <td style="text-align: right;">${item.service === 'Recommendation' && item.price === 0 ? '-' : '$' + item.price.toFixed(2)}</td>
             </tr>`).join('') : `<tr><td colspan="3">No services added.</td></tr>`;
         
         reportContainer.innerHTML = `
-            <header>
-                <img id="reportLogo" src="${logoUrl}" alt="Bay Services Logo">
-            </header>
+            <header><img id="reportLogo" src="${logoUrl}" alt="Bay Services Logo"></header>
             <main>
                 <h1>Service Report</h1>
                 <div class="report-meta">
@@ -222,13 +242,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     </thead>
                     <tbody>${itemsHtml}</tbody>
                 </table>
-                <div class="total-section">
-                   <div class="total-box"><strong>Total: $${total.toFixed(2)}</strong></div>
-                </div>
+                <div class="total-section"><div class="total-box"><strong>Total: $${total.toFixed(2)}</strong></div></div>
             </main>
             <footer>
                 <p>3700 Lick Mill Blvd, Apt. 311, Santa Clara, CA, 95054</p>
-                <p>Phone: (650) 731-7359 | Email: info@thebayservices.com | Web: www.thebayservices.com</p>
+                <p>Phone: (650) 666-3911 | Email: info@thebayservices.com | Web: www.thebayservices.com</p>
             </footer>`;
     }
 
