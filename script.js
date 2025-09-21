@@ -21,7 +21,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let reportItems = [];
     let clients = [];
-    const logoUrl = 'https://thebayservices.com/wp-content/uploads/2022/07/bay-services-logo-300x100.png';
+    // =================================================================
+    // >>>>>>>>>> ГЛАВНОЕ ИЗМЕНЕНИЕ ЗДЕСЬ <<<<<<<<<<<
+    // Используем относительный путь к логотипу, который лежит в репозитории
+    // =================================================================
+    const logoUrl = 'bay-services-logo.png';
 
     // --- Local Storage Functions ---
     function loadClientsFromStorage() {
@@ -116,16 +120,12 @@ document.addEventListener('DOMContentLoaded', () => {
         exportPdfBtn.classList.remove('hidden');
     });
 
-    // =================================================================
-    // >>>>>>>>>> НОВЫЙ МЕТОД ЭКСПОРТА В PDF <<<<<<<<<<<
-    // =================================================================
     exportPdfBtn.addEventListener('click', async () => {
         const element = document.getElementById('report-container');
         const elementClone = element.cloneNode(true);
         const logoInClone = elementClone.querySelector('#reportLogo');
 
         try {
-            // "Фотографируем" логотип и получаем его данные
             const response = await fetch(logoUrl);
             const blob = await response.blob();
             const dataUrl = await new Promise(resolve => {
@@ -133,11 +133,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 reader.onloadend = () => resolve(reader.result);
                 reader.readAsDataURL(blob);
             });
-            // Вставляем "снимок" в клон документа
             logoInClone.src = dataUrl;
         } catch (error) {
             console.error("Could not process logo:", error);
             alert("Error: Could not load the logo for the PDF. Please check your internet connection.");
+            return; // Stop execution if logo fails
         }
 
         let reportCounter = (parseInt(localStorage.getItem('reportCounter') || '1000')) + 1;
